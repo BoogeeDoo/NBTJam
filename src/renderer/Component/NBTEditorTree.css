@@ -1,0 +1,23 @@
+.ant-tree .ant-tree-node-content-wrapper {
+  white-space: nowrap;
+}
+
+.nbt-tree-ellipsis {
+  margin-left: 3px;
+  margin-right: 3px;
+  color: #ccc;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.nbt-tree-quote {
+  color: #ccc;
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
+}
+
+.nbt-tree-left-quote {
+  margin-right: 2px;
+}
+
+.nbt-tree-right-quote {
+  margin-left: 2px;
+}
