@@ -2,7 +2,7 @@ import { Divider, Tag, Tree } from "antd";
 import { DataNode } from "antd/lib/tree";
 import { ReactNode, useEffect, useState } from "react";
 
-import { buildTreeData, MAX_CHILDREN_COUNT, NBTDataNode } from "../lib/NBTDataNode";
+import { buildTreeData, findDataNodeByKey, MAX_CHILDREN_COUNT, NBTDataNode } from "../lib/NBTDataNode";
 import { Bus } from "../bus";
 
 import './NBTEditorTree.css';
@@ -102,12 +102,25 @@ function NBTEditorTree({
   useEffect(() => {
     const data: DataNode[] = [];
     const { root } = bus;
-    const rootKeys = Object.keys(root);
-    for (const key of rootKeys) {
-      data.push(buildTreeData(key, root, root[key], ''));
+    for (let i = 0; i < root.length; i++) {
+      data.push(buildTreeData(root[i].key, i, root, root[i], ''));
     }
+
+    const selectedKey = bus.selectedNode?.key;
+    if (!selectedKey) {
+      bus.selectedNode = null;
+    } else {
+      bus.selectedNode = null;
+      for (let i = 0; i < data.length; i++) {
+        const node = findDataNodeByKey(data[i] as NBTDataNode, selectedKey as string);
+        if (node) {
+          bus.selectedNode = node;
+          break;
+        }
+      }
+    }
+
     setTreeData(data);
-    console.log(data);
   }, [ currentFileUUID, currentModifyVersion ]);
 
   return (
@@ -122,7 +135,7 @@ function NBTEditorTree({
           if (!info.selected) {
             bus.selectedNode = null;
           } else {
-            bus.selectedNode = info.node;
+            bus.selectedNode = info.node as any as NBTDataNode;
           }
         }}
       />

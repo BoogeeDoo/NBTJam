@@ -31,66 +31,79 @@ let dummy: StructedNBTListTag;
 let dummy2: StructedNBTTag;
 function createStructedNode(
   tag: typeof dummy2.tag,
+  key: string | undefined,
   type: typeof dummy.childrenType,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
 ): StructedNBTTag {
-  return {
+  const ret: StructedNBTTag = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tag: tag as any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type: type as any,
     value,
   };
+  if (key !== undefined) {
+    ret.key = key;
+  }
+  return ret;
 }
 
-function nbtNodeToStructed(node: BaseTag) {
+function nbtNodeToStructed(node: BaseTag, key: string | undefined = undefined): StructedNBTTag {
   switch (node.getTypeId()) {
     case NBT.Tags.TAG_Byte:
       return createStructedNode(
         NBT.Tags.TAG_Byte as typeof dummy2.tag,
+        key,
         'byte',
         (node as TAGByte).getValue());
 
     case NBT.Tags.TAG_Short:
       return createStructedNode(
         NBT.Tags.TAG_Short as typeof dummy2.tag,
+        key,
         'short',
         (node as TAGShort).getValue());
 
     case NBT.Tags.TAG_Int:
       return createStructedNode(
         NBT.Tags.TAG_Int as typeof dummy2.tag,
+        key,
         'int',
         (node as TAGInt).getValue());
 
     case NBT.Tags.TAG_Long:
       return createStructedNode(
         NBT.Tags.TAG_Long as typeof dummy2.tag,
+        key,
         'long',
         (node as TAGLong).getValue().toString());
 
     case NBT.Tags.TAG_Float:
       return createStructedNode(
         NBT.Tags.TAG_Float as typeof dummy2.tag,
+        key,
         'float',
         (node as TAGFloat).getValue());
 
     case NBT.Tags.TAG_Double:
       return createStructedNode(
         NBT.Tags.TAG_Double as typeof dummy2.tag,
+        key,
         'double',
         (node as TAGDouble).getValue());
 
     case NBT.Tags.TAG_Byte_Array:
       return createStructedNode(
         NBT.Tags.TAG_Byte_Array as typeof dummy2.tag,
+        key,
         'byte_array',
         [ ...(node as TAGByteArray).getValue() ]);
 
     case NBT.Tags.TAG_String:
       return createStructedNode(
         NBT.Tags.TAG_String as typeof dummy2.tag,
+        key,
         'string',
         (node as TAGString).getValue());
 
@@ -103,6 +116,7 @@ function nbtNodeToStructed(node: BaseTag) {
 
       const s: StructedNBTListTag = createStructedNode(
         NBT.Tags.TAG_List as typeof dummy2.tag,
+        key,
         'list',
         list) as StructedNBTListTag;
 
@@ -111,29 +125,30 @@ function nbtNodeToStructed(node: BaseTag) {
     }
 
     case NBT.Tags.TAG_Compound: {
-      const compound: {
-        [key: string]: StructedNBTTag,
-      } = {};
+      const children: StructedNBTTag[] = [];
       const keys = (node as TAGCompound).getNames();
       for (const key of keys) {
-        compound[key] = nbtNodeToStructed((node as TAGCompound).get(key));
+        children.push(nbtNodeToStructed((node as TAGCompound).get(key), key));
       }
 
       return createStructedNode(
         NBT.Tags.TAG_Compound as typeof dummy2.tag,
+        key,
         'compound',
-        compound);
+        children);
     }
 
     case NBT.Tags.TAG_Int_Array:
       return createStructedNode(
         NBT.Tags.TAG_Int_Array as typeof dummy2.tag,
+        key,
         'int_array',
         [ ...(node as TAGIntArray).getValue() ]);
 
     case 0:
       return createStructedNode(
         0 as typeof dummy2.tag,
+        key,
         'end',
         null);
 
@@ -143,12 +158,12 @@ function nbtNodeToStructed(node: BaseTag) {
 }
 
 export function nbtToStructedRoot(nbt: NBT): StructedNBTRoot {
-  const root: StructedNBTRoot = {};
+  const root: StructedNBTRoot = [];
   const rootKeys = nbt.keys();
 
   for (const key of rootKeys) {
     const value = nbt.get(key);
-    root[key] = nbtNodeToStructed(value);
+    root.push(nbtNodeToStructed(value, key));
   }
 
   return root;

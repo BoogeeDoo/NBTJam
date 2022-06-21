@@ -7,25 +7,57 @@ export const MAX_CHILDREN_COUNT = -1;
 let dummy: StructedNBTTag;
 
 export interface NBTDataNode extends DataNode {
-  structedTag?: StructedNBTByteTag;
-  parentStructedTag?: StructedNBTByteTag | StructedNBTRoot;
+  idx: number;
+
+  parentNode?: NBTDataNode;
+
+  structedTag?: StructedNBTTag;
+  parentStructedTag?: StructedNBTTag | StructedNBTRoot;
+
   keyInParent?: string | number;
+
   valueType?: typeof dummy.type;
   childrenType?: typeof dummy.type;
+
   realChildrenCount?: number;
   dummyMoreNode?: boolean;
+}
+
+export function findDataNodeByKey(node: NBTDataNode, key: string): NBTDataNode | null {
+  if (node.key === key) {
+    return node;
+  }
+
+  for (const child of node.children || []) {
+    const result = findDataNodeByKey(child as NBTDataNode, key);
+    if (result) return result;
+  }
+
+  return null;
+}
+
+export function buildDataNodeKey(node: NBTDataNode): string {
+  let key = node.keyInParent;
+  let parent = node.parentNode;
+
+  while (parent) {
+    key = `${parent.keyInParent}-${key}`;
+    parent = parent.parentNode;
+  }
+
+  return `t--${key}`;
 }
 
 function createDummyNoMoreNode(
   parentNode: StructedNBTTag,
   path: string,
-  key: string | number,
-  leafKey: string | number,
+  idx: number,
 ): NBTDataNode {
   const icon = <NBTSheetIcon type="end" />;
   return {
     icon,
-    key: `t-${path}-${key}-${leafKey}`,
+    key: `t-${path}-${idx}`,
+    idx,
     title: '',
     structedTag: null,
     parentStructedTag: parentNode,
@@ -37,15 +69,15 @@ function createDummyNoMoreNode(
 
 function createListChildrenNodes(
   path: string,
-  key: string | number,
+  idx: number,
   node: StructedNBTListTag,
 ): NBTDataNode[] {
   const children: NBTDataNode[] = [];
   for (let i = 0; i < node.value.length; i++) {
     if (MAX_CHILDREN_COUNT === -1 || i < MAX_CHILDREN_COUNT - 1) {
-      children.push(buildTreeData(i, node, node.value[i], `${path}-${key}`));
+      children.push(buildTreeData(i, i, node, node.value[i], `${path}-${idx}`));
     } else {
-      children.push(createDummyNoMoreNode(node, path, key, i));
+      children.push(createDummyNoMoreNode(node, `${path}-${idx}`, i));
       break;
     }
   }
@@ -54,7 +86,7 @@ function createListChildrenNodes(
 
 function createXArrayChildrenNodes(
   path: string,
-  key: string | number,
+  idx: number,
   node: StructedNBTByteArrayTag | StructedNBTIntArrayTag,
 ): NBTDataNode[] {
   const children: NBTDataNode[] = [];
@@ -64,7 +96,8 @@ function createXArrayChildrenNodes(
     if (MAX_CHILDREN_COUNT === -1 || i < MAX_CHILDREN_COUNT - 1) {
       children.push({
         icon,
-        key: `t-${path}-${key}-${i}`,
+        idx: i,
+        key: `t-${path}-${idx}-${i}`,
         title: node.value[i],
 
         parentStructedTag: node,
@@ -75,7 +108,7 @@ function createXArrayChildrenNodes(
         isLeaf: true,
       });
     } else {
-      children.push(createDummyNoMoreNode(node, path, key, i));
+      children.push(createDummyNoMoreNode(node, `${path}-${idx}`, i));
       break;
     }
   }
@@ -85,26 +118,32 @@ function createXArrayChildrenNodes(
 
 function createCompoundChildrenNodes(
   path: string,
-  key: string | number,
+  idx: number,
   node: StructedNBTCompoundTag,
 ): NBTDataNode[] {
   const children: NBTDataNode[] = [];
-  const nextPath = `${path}-${key}`;
-  for (const [k, v] of Object.entries(node.value)) {
+  const nextPath = `${path}-${idx}`;
+  let i = 0;
+  for (const tag of node.value) {
     if (MAX_CHILDREN_COUNT === -1 || children.length < MAX_CHILDREN_COUNT - 1) {
-      children.push(buildTreeData(k, node, v, nextPath));
+      children.push(buildTreeData(tag.key, i, node, tag, nextPath));
     } else {
-      children.push(createDummyNoMoreNode(node, path, key, k));
+      children.push(createDummyNoMoreNode(node, path, i));
       break;
     }
+
+    i++;
   }
+
   return children;
 }
 
 function createDataNode(
+  parentNode: NBTDataNode | null,
   path: string,
-  parentStructedTag: StructedNBTByteTag | StructedNBTRoot,
+  parentStructedTag: StructedNBTTag | StructedNBTRoot,
   key: string | number,
+  idx: number,
   valueType: typeof dummy.type,
   content: string,
   isLeaf: boolean,
@@ -112,14 +151,34 @@ function createDataNode(
   realChildrenCount?: number,
   childType?: typeof dummy.type,
 ): NBTDataNode {
+  let structedTag: StructedNBTTag | null = null;
+  const parentArray = Array.isArray(parentStructedTag) ?
+    parentStructedTag :
+    Array.isArray(parentStructedTag.value) ?
+      parentStructedTag.value :
+      [];
+  if (typeof key === 'number') {
+    structedTag = parentArray[key];
+  } else {
+    for (const tag of parentArray) {
+      if (tag.key === key) {
+        structedTag = tag;
+        break;
+      }
+    }
+  }
+
   const ret: Partial<NBTDataNode> = {
-    key: `t-${path}-${key}`,
+    idx,
+    key: `t-${path}-${idx}`,
     title: content,
     icon: <NBTSheetIcon type={valueType} />,
     isLeaf,
     parentStructedTag: parentStructedTag,
     keyInParent: key,
     valueType,
+    structedTag,
+    parentNode,
   };
 
   if (childType) {
@@ -136,9 +195,11 @@ function createDataNode(
 
 export function buildTreeData(
   key: string | number,
+  idx: number,
   parent: StructedNBTTag | StructedNBTRoot,
   node: StructedNBTTag,
   path: string,
+  parentNode: NBTDataNode | null = null,
 ): NBTDataNode {
   switch (node.type) {
     case 'byte':
@@ -150,48 +211,75 @@ export function buildTreeData(
     case 'string':
     case 'end':
       return createDataNode(
+        parentNode,
         path,
         parent,
         key,
+        idx,
         node.type,
         node.value.toString(),
         true);
 
     case 'byte_array':
-    case 'int_array':
-      return createDataNode(
+    case 'int_array': {
+      const ret = createDataNode(
+        parentNode,
         path,
         parent,
         key,
+        idx,
         node.type,
         '',
         false,
-        createXArrayChildrenNodes(path, key, node),
+        createXArrayChildrenNodes(path, idx, node),
         node.value.length);
 
-    case 'compound':
-      return createDataNode(
+      for (const child of ret.children) {
+        (child as NBTDataNode).parentNode = ret;
+      }
+
+      return ret;
+    }
+
+    case 'compound': {
+      const ret = createDataNode(
+        parentNode,
         path,
         parent,
         key,
+        idx,
         node.type,
         '',
         false,
-        createCompoundChildrenNodes(path, key, node),
+        createCompoundChildrenNodes(path, idx, node),
         Object.keys(node.value).length);
 
+      for (const child of ret.children) {
+        (child as NBTDataNode).parentNode = ret;
+      }
+
+      return ret;
+    }
+
     case 'list': {
-      return createDataNode(
+      const ret = createDataNode(
+        parentNode,
         path,
         parent,
         key,
+        idx,
         node.type,
         '',
         false,
-        createListChildrenNodes(path, key, node),
+        createListChildrenNodes(path, idx, node),
         node.value.length,
         node.childrenType);
-      break;
+
+      for (const child of ret.children) {
+        (child as NBTDataNode).parentNode = ret;
+      }
+
+      return ret;
     }
 
     default:

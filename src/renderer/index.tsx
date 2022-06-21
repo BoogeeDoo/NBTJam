@@ -18,7 +18,7 @@ sel.sheet.insertRule(`body {
   font-family: 'Fusion Pixel' !important;
 }`, 0);
 
-const bus = new Bus();
+const bus = (window as any).bus = new Bus();
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.Fragment>

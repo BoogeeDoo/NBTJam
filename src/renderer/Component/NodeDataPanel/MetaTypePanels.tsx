@@ -2,7 +2,7 @@ import { Input, InputNumber } from 'antd';
 import { useEffect, useState } from 'react';
 
 import { Bus } from '../../bus';
-import metaTypePanel from './MetaTypePanel';
+import metaTypePanel, { MetaTypePanelValueInputFun } from './MetaTypePanel';
 import { NBTDataNode } from '../../lib/NBTDataNode';
 
 const encoder = new TextEncoder();
@@ -11,7 +11,7 @@ const e: {
   [key: string]: (props: { bus: Bus, node: NBTDataNode }) => JSX.Element;
 } = {};
 
-function integerInputNumber(type: 'byte' | 'short' | 'int', min: number, max: number) {
+function integerInputNumber(type: 'byte' | 'short' | 'int', min: number, max: number): MetaTypePanelValueInputFun {
   return () => (
     <InputNumber
       min={min}
@@ -27,7 +27,7 @@ function integerInputNumber(type: 'byte' | 'short' | 'int', min: number, max: nu
   );
 }
 
-function floatInputNumber(type: 'float' | 'double', min: number, max: number) {
+function floatInputNumber(type: 'float' | 'double', min: number, max: number): MetaTypePanelValueInputFun {
   return () => (
     <InputNumber
       min={min}

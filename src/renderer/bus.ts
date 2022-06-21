@@ -15,7 +15,7 @@ class Bus {
   #selectedNode: [ NBTDataNode | null, (_: NBTDataNode | null) => void ];
 
   constructor() {
-    this.#root = {};
+    this.#root = [];
     this.#currentFileUUID = [ '', () => { /**/ } ];
     this.#currentFilename = [ '', () => { /**/ } ];
     this.#currentModifyVersion = [ 0, () => { /**/ } ];
@@ -91,6 +91,7 @@ class Bus {
       this.currentFilename = ret.filePaths[0];
       this.root = ret.root;
       this.currentFileUUID = uuid.v1();
+      this.selectedNode = null;
     } catch (e) {
       const msg = e.message.replace(/Error invoking remote method .*?Error: /, '');
       message.error(`Failed to open file: ${msg}`);
