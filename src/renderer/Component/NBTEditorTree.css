@@ -2,6 +2,10 @@
   white-space: nowrap;
 }
 
+.ant-tree-list-holder {
+  height: 100vh;
+}
+
 .nbt-tree-ellipsis {
   margin-left: 3px;
   margin-right: 3px;

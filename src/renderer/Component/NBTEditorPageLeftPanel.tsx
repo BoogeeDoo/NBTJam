@@ -7,10 +7,12 @@ function EditorPageLeftPanel({
   bus,
   currentFileUUID,
   currentModifyVersion,
+  height,
 }: {
   bus: Bus,
   currentFileUUID: string | null,
   currentModifyVersion: number,
+  height: number,
 }) {
   if (currentFileUUID === null) {
     return (
@@ -24,6 +26,7 @@ function EditorPageLeftPanel({
 
   return (
     <NBTEditorTree
+      height={height}
       currentFileUUID={currentFileUUID}
       currentModifyVersion={currentModifyVersion}
       bus={bus}

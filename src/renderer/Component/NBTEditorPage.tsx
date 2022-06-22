@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import EditorPageLeftPanel from './NBTEditorPageLeftPanel';
 import EditorPageRightPanel from './NBTEditorPageRightPanel';
+import useResizeObserver from 'use-resize-observer';
 
 function NBTEditorPage({
   bus,
@@ -25,15 +26,19 @@ function NBTEditorPage({
     }
   }, [ currentFileUUID, currentModifyVersion ]);
 
+  const { ref, height = document.getElementsByTagName('body')[0].clientHeight } = useResizeObserver<HTMLDivElement>();
+
   return (
+        <div ref={ref} style={{ height: '100%', width: '100%' }}>
     <Resize>
-      <ResizeHorizon overflow="scroll" width={`${initLeftWidth}px`} minWidth="200px">
-        <EditorPageLeftPanel bus={bus} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
+      <ResizeHorizon overflow="hidden" width={`${initLeftWidth}px`} minWidth="200px">
+          <EditorPageLeftPanel bus={bus} height={height} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
       </ResizeHorizon>
       <ResizeHorizon minWidth="10px" overflow="scroll">
         <EditorPageRightPanel bus={bus} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
       </ResizeHorizon>
     </Resize>
+        </div>
   );
 }
 

@@ -2,7 +2,7 @@ import { DataNode } from "antd/lib/tree";
 
 import NBTSheetIcon from "../Component/NBTSheetIcon";
 
-export const MAX_CHILDREN_COUNT = -1;
+export const MAX_CHILDREN_COUNT: number = -1;
 
 let dummy: StructedNBTTag;
 
@@ -21,9 +21,21 @@ export interface NBTDataNode extends DataNode {
 
   realChildrenCount?: number;
   dummyMoreNode?: boolean;
+
+  width?: number;
 }
 
-export function findDataNodeByKey(node: NBTDataNode, key: string): NBTDataNode | null {
+export function findDataNodeByKey(node: NBTDataNode | NBTDataNode[], key: string): NBTDataNode | null {
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const ret = findDataNodeByKey(n, key);
+      if (ret) {
+        return ret;
+      }
+    }
+    return null;
+  }
+
   if (node.key === key) {
     return node;
   }
