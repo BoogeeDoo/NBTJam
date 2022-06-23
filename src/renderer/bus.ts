@@ -8,6 +8,7 @@ import { NBTDataNode } from "./lib/NBTDataNode";
 class Bus {
   #root: StructedNBTRoot;
 
+  #loading: [ string, (_: string) => void ];
   #currentFileUUID: [ string, (_: string) => void ];
   #currentFilename: [ string, (_: string) => void ];
   #currentModifyVersion: [ number, (_: number) => void ];
@@ -20,6 +21,23 @@ class Bus {
     this.#currentFilename = [ '', () => { /**/ } ];
     this.#currentModifyVersion = [ 0, () => { /**/ } ];
     this.#selectedNode = [ null, () => { /**/ } ];
+    this.#loading = [ '', () => { /**/ } ];
+
+    ipcRenderer.on('trigger-open-file', () => {
+      this.openFile();
+    });
+
+    ipcRenderer.on('trigger-save-file', () => {
+      this.triggerSaveFile();
+    });
+
+    ipcRenderer.on('trigger-save-file-as', () => {
+      this.triggerSaveFile(true);
+    });
+  }
+
+  updateLoadingSetter(updater: [ string, (_: string) => void ]) {
+    this.#loading = updater;
   }
 
   updateSelectedNodeSetter(updater: [ NBTDataNode | null, (_: NBTDataNode | null) => void ]) {
@@ -78,12 +96,61 @@ class Bus {
     return this.#selectedNode[0];
   }
 
+  set loading(loading: string) {
+    this.#loading[1](loading);
+  }
+
+  get loading(): string {
+    return this.#loading[0];
+  }
+
+  async triggerSaveFile(saveAs = false) {
+    if (!this.currentFilename || !this.currentFileUUID) {
+      message.error('No file is opened.');
+      return;
+    }
+
+    console.log('triggerSaveFile', this.currentModifyVersion, saveAs);
+    if (!this.currentModifyVersion && !saveAs) {
+      return;
+    }
+
+    this.loading = 'Saving file...';
+    let ret;
+    try {
+      ret = await ipcRenderer.invoke('save-nbt', this.root, saveAs);
+    } catch (e) {
+      const msg = e.message.replace(/Error invoking remote method .*?Error: /, '');
+      message.error(`Failed to save file: ${msg}`);
+      this.loading = '';
+      return;
+    }
+
+    if (ret.canceled) {
+      this.loading = '';
+      return;
+    }
+
+    this.currentFilename = ret.filename;
+    this.currentModifyVersion = 0;
+    this.root = ret.root;
+    this.loading = '';
+  }
+
   async openFile() {
-    // TODO(XadillaX): current modified.
+    this.loading = 'Opening file...';
+
+    if (this.#currentModifyVersion[0]) {
+      if (!confirm('You have unsaved changes. Are you sure to open a new file?')) {
+        this.loading = '';
+        return;
+      }
+    }
 
     try {
       const ret = (await ipcRenderer.invoke('open-nbt')) as OpenNBTReturnValue;
       if (ret.canceled) {
+        this.loading = '';
         return;
       }
 
@@ -92,9 +159,11 @@ class Bus {
       this.root = ret.root;
       this.currentFileUUID = uuid.v1();
       this.selectedNode = null;
+      this.loading = '';
     } catch (e) {
       const msg = e.message.replace(/Error invoking remote method .*?Error: /, '');
       message.error(`Failed to open file: ${msg}`);
+      this.loading = '';
       return;
     }
   }

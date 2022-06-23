@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, shell } from 'electron';
 
 import { Bus } from './lib/bus';
 import { registerIPC } from './ipc/index';
@@ -10,6 +10,7 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+let bus: Bus;
 const createWindow = async (): Promise<void> => {
   const mainWindow = new BrowserWindow({
     height: 600,
@@ -19,11 +20,11 @@ const createWindow = async (): Promise<void> => {
       nodeIntegration: true,
       contextIsolation: false,
     },
-    autoHideMenuBar: true,
-    icon: './assets/icon.jpg',
+    autoHideMenuBar: false,
+    icon: './assets/logo.png',
   });
 
-  const bus = new Bus(mainWindow);
+  bus = new Bus(mainWindow);
   await registerIPC(bus);
 
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
@@ -48,3 +49,96 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+const isMac = process.platform === 'darwin'
+const first: MenuItem[] = isMac ? [{
+  label: app.name,
+  submenu: [
+    { role: 'about' },
+    { type: 'separator' },
+    { role: 'services' },
+    { type: 'separator' },
+    { role: 'hide' },
+    { role: 'hideOthers' },
+    { role: 'unhide' },
+    { type: 'separator' },
+    { role: 'quit' }
+  ],
+}] as any : [];
+
+const menu = Menu.buildFromTemplate([
+  ...first, {
+  label: 'File',
+  submenu: [{
+    label: 'Open NBT File',
+    accelerator: 'CmdOrCtrl+O',
+    click() {
+      bus.mainWindow.webContents.send('trigger-open-file');
+    },
+  }, {
+    label: 'Save NBT File',
+    accelerator: 'CmdOrCtrl+S',
+    click() {
+      bus.mainWindow.webContents.send('trigger-save-file');
+    },
+  }, {
+    label: 'Save NBT File As...',
+    accelerator: 'CmdOrCtrl+Shift+S',
+    click() {
+      bus.mainWindow.webContents.send('trigger-save-file-as');
+    },
+  }, isMac ? { role: 'close' } : { role: 'quit' }],
+}, {
+    label: 'Edit',
+    submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      ...(isMac ? [
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Speech',
+          submenu: [
+            { role: 'startSpeaking' },
+            { role: 'stopSpeaking' }
+          ]
+        }
+      ] as any : [
+        { role: 'delete' },
+        { type: 'separator' },
+        { role: 'selectAll' }
+      ] as any),
+    ],
+  },   {
+    label: 'Window',
+    submenu: [
+      { role: 'minimize' },
+      { role: 'zoom' },
+      ...(isMac ? [
+        { type: 'separator' },
+        { role: 'front' },
+        { type: 'separator' },
+        { role: 'window' }
+      ] : [
+        { role: 'close' }
+      ])
+    ]
+  },
+  {
+    role: 'help',
+    submenu: [
+      {
+        label: 'Learn More',
+        click: async () => {
+          await shell.openExternal('https://github.com/BoogeeDoo/NBTJam');
+        }
+      }
+    ]
+  }]);
+Menu.setApplicationMenu(menu);

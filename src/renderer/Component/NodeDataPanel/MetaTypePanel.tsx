@@ -86,6 +86,22 @@ function metaTypePanel({
       <Form.Item
         label={typeof node.keyInParent === 'string' ? 'Key' : 'Index'}
         name="keyInParent"
+        rules={[{
+          validator: (_, value) => {
+            if (typeof value === 'number') {
+              return Promise.resolve();
+            }
+
+            const parent = node.parentNode;
+            for (const child of parent.children as NBTDataNode[]) {
+              if (child.keyInParent === value && child !== node) {
+                return Promise.reject('Key already exists.');
+              }
+            }
+
+            return Promise.resolve();
+          },
+        }]}
       >
         <Input disabled={typeof node.keyInParent === 'number'} />
       </Form.Item>
@@ -111,6 +127,7 @@ function metaTypePanel({
             }
           }
           node.structedTag.key = keyInParent;
+          node.keyInParent = keyInParent;
         }
 
         if (`${value}` !== `${initValues.value}`) {
@@ -143,7 +160,11 @@ function metaTypePanel({
 
         {keyInput}
 
-        <Form.Item label="Value" name="value" tooltip={valueInputTooltip}>
+        <Form.Item
+          label="Value"
+          name="value"
+          tooltip={valueInputTooltip}
+        >
           {valueInput({ form })}
         </Form.Item>
 

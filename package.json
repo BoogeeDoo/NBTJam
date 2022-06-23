@@ -1,6 +1,6 @@
 {
   "name": "nbt-jam",
-  "productName": "NBT Jam",
+  "productName": "NBT Jam!",
   "version": "1.0.0",
   "description": "A cross-platform Minecraft NBT file editor.",
   "main": ".webpack/main",
@@ -20,7 +20,7 @@
   "config": {
     "forge": {
       "packagerConfig": {
-        "icon": "./assets/icon"
+        "icon": "./assets/logo"
       },
       "makers": [
         {

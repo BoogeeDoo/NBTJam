@@ -1,3 +1,4 @@
+import { Spin } from 'antd';
 import { useState } from 'react';
 
 import { Bus } from "./bus";
@@ -9,16 +10,20 @@ function App({ bus }: { bus: Bus }) {
   const [ currentFilename, setCurrentFilename ] = useState<null | string>(null);
   const [ currentModifyVersion, setCurrentModifyVersion ] = useState<number>(0);
   const [ selectedNode, setSelectedNode ] = useState<null | NBTDataNode>(null);
+  const [ loading, setLoading ] = useState<string>('');
 
   bus.updateCurrentFileUUIDSetter([ currentFileUUID, setCurrentFileUUID ]);
   bus.updateCurrentFilenameSetter([ currentFilename, setCurrentFilename ]);
   bus.updateCurrentModifiedSetter([ currentModifyVersion, setCurrentModifyVersion ]);
   bus.updateSelectedNodeSetter([ selectedNode, setSelectedNode ]);
+  bus.updateLoadingSetter([ loading, setLoading ]);
 
   return (
-    <>
-      <NBTEditorPage bus={bus} currentModifyVersion={currentModifyVersion} currentFileUUID={currentFileUUID} />
-    </>
+    <Spin spinning={!!loading} tip={loading}>
+      <div style={{ height: '100vh' }}>
+        <NBTEditorPage bus={bus} currentModifyVersion={currentModifyVersion} currentFileUUID={currentFileUUID} />
+      </div>
+    </Spin>
   );
 }
 

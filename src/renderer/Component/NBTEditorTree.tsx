@@ -23,9 +23,9 @@ function ellipsisMiddle(text: ReactNode, maxLength: number): ReactNode {
 
   return (
     <>
-      {text.substr(0, maxLength / 2)}
+      {text.substr(0, (maxLength / 2) - 1)}
       <span className="nbt-tree-ellipsis">...</span>
-      {text.substr(text.length - maxLength / 2)}
+      {text.substr((text.length - maxLength / 2) + 1)}
     </>
   );
 }
@@ -153,7 +153,7 @@ function NBTEditorTree({
       if (!includeKeySpan) continue;
       const key = includeKeySpan.ariaLabel;
       const node = findDataNodeByKey(treeData as NBTDataNode[], key);
-      if (node.width) continue;
+      if (!node || node.width) continue;
 
       node.width = child.clientWidth;
     }
@@ -176,6 +176,7 @@ function NBTEditorTree({
         virtual={true}
         height={height}
         titleRender={renderNode}
+        selectedKeys={[ bus.selectedNode?.key ]}
         onSelect={(selectedKeys, info) => {
           if (!info.selected) {
             bus.selectedNode = null;

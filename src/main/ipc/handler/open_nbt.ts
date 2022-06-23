@@ -34,6 +34,7 @@ class OpenNBTHandler extends BaseIPCHandler {
 
     const parsed = await OpenNBTHandler.parseFile(ret.filePaths[0]);
     const structed = nbtToStructedRoot(parsed.nbt);
+    this.bus.openedInfo = parsed;
 
     ret.root = structed;
 

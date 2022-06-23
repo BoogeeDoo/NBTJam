@@ -24,21 +24,21 @@ function NBTEditorPage({
     } else {
       document.title = `NBT Jam! - ${bus.currentFilename}${currentModifyVersion ? '*' : ''}`;
     }
-  }, [ currentFileUUID, currentModifyVersion ]);
+  }, [ currentFileUUID, bus.currentFilename, currentModifyVersion ]);
 
   const { ref, height = document.getElementsByTagName('body')[0].clientHeight } = useResizeObserver<HTMLDivElement>();
 
   return (
-        <div ref={ref} style={{ height: '100%', width: '100%' }}>
-    <Resize>
-      <ResizeHorizon overflow="hidden" width={`${initLeftWidth}px`} minWidth="200px">
-          <EditorPageLeftPanel bus={bus} height={height} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
-      </ResizeHorizon>
-      <ResizeHorizon minWidth="10px" overflow="scroll">
-        <EditorPageRightPanel bus={bus} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
-      </ResizeHorizon>
-    </Resize>
-        </div>
+    <div ref={ref} style={{ height: '100%', width: '100%' }}>
+      <Resize>
+        <ResizeHorizon overflow="hidden" width={`${initLeftWidth}px`} minWidth="200px">
+            <EditorPageLeftPanel bus={bus} height={height} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
+        </ResizeHorizon>
+        <ResizeHorizon minWidth="10px" overflow="auto">
+          <EditorPageRightPanel bus={bus} currentFileUUID={currentFileUUID} currentModifyVersion={currentModifyVersion} />
+        </ResizeHorizon>
+      </Resize>
+    </div>
   );
 }
 
