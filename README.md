@@ -1,4 +1,4 @@
-# NBTJam!
+# NBT Jam!
 
 A cross-platform Minecraft NBT file editor.
 
